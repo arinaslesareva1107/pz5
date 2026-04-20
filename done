@@ -1,0 +1,142 @@
+import random
+import math
+
+class Driver:
+    def __init__(self, last_name, first_name, middle_name, money, fuel_volume, x, y):
+        self.last_name = last_name
+        self.first_name = first_name
+        self.middle_name = middle_name
+        self.money = money
+        self.bonus_points = random.randint(0, 1000) 
+        self.fuel_volume = fuel_volume
+        self.x = x
+        self.y = y
+
+    def get_full_name(self):
+        return f"{self.last_name} {self.first_name} {self.middle_name}"
+
+    def get_total_funds(self):
+        return self.money + self.bonus_points
+
+
+class GasStation:
+    def __init__(self, number, fuel_volumes, fuel_prices, x, y):
+        self.number = number
+        self.fuel_volumes = fuel_volumes
+        self.fuel_prices = fuel_prices
+        self.x = x         
+        self.y = y
+
+class Purchase:
+    def __init__(self):
+        self.station_number = 0
+        self.driver_name = ""
+        self.fuel_volume = 0.0
+        self.fuel_type = 0
+        self.total_cost = 0.0
+
+    def can_purchase(self, driver, stations):
+        for station in stations:
+            distance = math.sqrt((station.x - driver.x) ** 2 + (station.y - driver.y) ** 2)
+
+            if distance >= 1000:
+                continue  
+
+            for fuel_type in range(2):
+                if station.fuel_volumes[fuel_type] >= driver.fuel_volume:
+                    cost = driver.fuel_volume * station.fuel_prices[fuel_type]
+                    if driver.get_total_funds() >= cost:
+                        self.station_number = station.number
+                        self.driver_name = driver.get_full_name()
+                        self.fuel_volume = driver.fuel_volume
+                        self.fuel_type = fuel_type + 1  
+                        self.total_cost = cost
+                        return True
+        return False
+
+    def execute_purchase(self, driver, stations):
+        for station in stations:
+            distance = math.sqrt((station.x - driver.x) ** 2 + (station.y - driver.y) ** 2)
+            if distance >= 1000:
+                continue
+
+            for fuel_type in range(2):
+                if station.fuel_volumes[fuel_type] >= driver.fuel_volume:
+                    cost = driver.fuel_volume * station.fuel_prices[fuel_type]
+                    if driver.get_total_funds() >= cost:
+                        if driver.bonus_points >= cost:
+                            driver.bonus_points -= cost
+                        else:
+                            cost -= driver.bonus_points
+                            driver.bonus_points = 0
+                            driver.money -= cost
+
+                        station.fuel_volumes[fuel_type] -= driver.fuel_volume
+
+                        self.station_number = station.number
+                        self.driver_name = driver.get_full_name()
+                        self.fuel_volume = driver.fuel_volume
+                        self.fuel_type = fuel_type + 1
+                        self.total_cost = driver.fuel_volume * station.fuel_prices[fuel_type]
+                        return True
+        return False
+
+    def __str__(self):
+        return (f"ПОКУПКА:\n"
+                f"Номер АЗС: {self.station_number}\n"
+                f"ФИО: {self.driver_name}\n"
+                f"Объем топлива: {self.fuel_volume:.2f} л\n"
+                f"Марка топлива: {self.fuel_type}\n"
+                f"Стоимость: {self.total_cost:.2f} руб.")
+
+
+def main():
+    stations = [
+        GasStation(1, [5000, 3000], [52.5, 58.0], 100, 200),
+        GasStation(2, [2000, 4000], [51.9, 57.5], 500, 800),
+        GasStation(3, [1000, 6000], [53.0, 59.0], 900, 300),
+        GasStation(4, [7000, 2500], [52.0, 58.5], 400, 100),
+        GasStation(5, [3000, 5000], [51.5, 57.0], 800, 600)
+    ]
+
+    print("=== Ввод данных о водителе ===")
+
+    last_name = input("Фамилия: ")
+    first_name = input("Имя: ")
+    middle_name = input("Отчество: ")
+
+    value = float(input("Введите число (<=100 — объем топлива в л, >100 — денежные средства в руб): "))
+
+    if value <= 100:
+        fuel_volume = value
+        money = float(input("Введите количество денежных средств на счете: "))
+    else:
+        money = value
+        fuel_volume = float(input("Введите желаемый объем топлива в л: "))
+
+    x = float(input("Координата X водителя: "))
+    y = float(input("Координата Y водителя: "))
+
+    driver = Driver(last_name, first_name, middle_name, money, fuel_volume, x, y)
+
+    print(f"\nБонусные баллы: {driver.bonus_points}")
+    print(f"Всего доступно средств: {driver.get_total_funds():.2f} руб.")
+
+    purchase = Purchase()
+
+    if purchase.can_purchase(driver, stations):
+        print("\nПокупка возможна. Оформление...")
+        purchase.execute_purchase(driver, stations)
+        print("\n" + str(purchase))
+        print(f"\nОстаток на счете: {driver.money:.2f} руб.")
+        print(f"Остаток бонусных баллов: {int(driver.bonus_points)}")
+    else:
+        print("\nНевозможно совершить покупку!")
+        print("Причины:")
+        print("- Нет АЗС в радиусе 1000 м, или")
+        print("- Недостаточно топлива на АЗС, или")
+        print("- Недостаточно денежных средств.")
+
+
+if __name__ == "__main__":
+    main()
